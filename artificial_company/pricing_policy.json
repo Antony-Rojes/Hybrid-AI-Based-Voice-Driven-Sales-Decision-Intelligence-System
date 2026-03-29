@@ -1,0 +1,6 @@
+{
+  "minimum_profit_margin_percent": 20,
+  "ideal_profit_margin_percent": 35,
+  "high_volume_discount_threshold": 1000,
+  "special_discount_allowed_for_large_hospitals": true
+}

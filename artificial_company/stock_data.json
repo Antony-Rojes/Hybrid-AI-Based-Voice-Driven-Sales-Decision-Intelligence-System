@@ -1,0 +1,7 @@
+{
+  "CP-01": {
+    "current_stock": 12000,
+    "reserved_stock": 2000,
+    "low_stock_threshold": 3000
+  }
+}

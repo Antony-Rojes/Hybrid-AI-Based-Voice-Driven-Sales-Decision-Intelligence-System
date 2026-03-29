@@ -1,0 +1,7 @@
+{
+  "max_discount_percent": 18,
+  "safe_discount_percent": 10,
+  "manager_approval_required_above_percent": 12,
+  "trial_allowed": true,
+  "trial_requires_future_commitment": true
+}

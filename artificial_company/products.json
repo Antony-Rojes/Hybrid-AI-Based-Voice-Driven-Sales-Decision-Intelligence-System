@@ -1,0 +1,16 @@
+{
+  "company_name": "MedNova Pharmaceuticals Pvt Ltd",
+  "products": [
+    {
+      "product_id": "CP-01",
+      "name": "CardioPlus Tablet",
+      "category": "Cardiology",
+      "base_price_per_strip": 120,
+      "manufacturing_cost_per_strip": 70,
+      "mrp_per_strip": 150,
+      "min_order_quantity": 50,
+      "max_trial_quantity": 100,
+      "weekly_supply_capacity": 5000
+    }
+  ]
+}

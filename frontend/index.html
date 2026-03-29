@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI — Meeting Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #1a1d24;
+    --border: #252830;
+    --accent: #00e5a0;
+    --accent2: #0066ff;
+    --warn: #ff6b35;
+    --danger: #ff3b5c;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  header {
+    margin-bottom: 48px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,229,160,0.1);
+    border: 1px solid rgba(0,229,160,0.25);
+    border-radius: 100px;
+    padding: 4px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  h1 {
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: #fff;
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    margin-top: 12px;
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 400;
+    font-family: var(--mono);
+  }
+
+  .server-config {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .server-config label {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+    white-space: nowrap;
+  }
+
+  .server-config input {
+    flex: 1;
+    min-width: 200px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .server-config input:focus { border-color: var(--accent); }
+
+  #status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  #status-dot.online { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  #status-dot.offline { background: var(--danger); }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 28px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab-btn.active {
+    background: var(--surface2);
+    color: var(--text);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    resize: vertical;
+    min-height: 140px;
+    outline: none;
+    line-height: 1.6;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(0,229,160,0.04);
+  }
+
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .upload-zone p {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .upload-zone .file-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    margin-top: 8px;
+    min-height: 18px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    padding: 13px 28px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    margin-top: 16px;
+    letter-spacing: 0.02em;
+  }
+
+  .btn:hover:not(:disabled) {
+    background: #00ffb3;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0,229,160,0.3);
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  .btn.loading .spinner { display: block; }
+  .btn.loading .btn-text { opacity: 0.7; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-banner {
+    display: none;
+    background: rgba(255,59,92,0.1);
+    border: 1px solid rgba(255,59,92,0.3);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--danger);
+    margin-top: 12px;
+  }
+
+  .error-banner.visible { display: block; }
+
+  #results {
+    display: none;
+    animation: fadeUp 0.4s ease;
+  }
+
+  #results.visible { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .results-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .risk-badge {
+    padding: 4px 14px;
+    border-radius: 100px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .risk-Low { background: rgba(0,229,160,0.15); color: var(--accent); border: 1px solid rgba(0,229,160,0.3); }
+  .risk-Medium { background: rgba(255,107,53,0.15); color: var(--warn); border: 1px solid rgba(255,107,53,0.3); }
+  .risk-High { background: rgba(255,59,92,0.15); color: var(--danger); border: 1px solid rgba(255,59,92,0.3); }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .metric {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+  }
+
+  .metric-label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+
+  .metric-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    font-family: var(--mono);
+  }
+
+  .metric-value.accent { color: var(--accent); }
+
+  .prob-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 4px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+
+  .prob-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 4px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 0%;
+  }
+
+  .strategy-box {
+    background: linear-gradient(135deg, rgba(0,102,255,0.1), rgba(0,229,160,0.05));
+    border: 1px solid rgba(0,102,255,0.25);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+
+  .strategy-label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+    opacity: 0.8;
+  }
+
+  .strategy-text {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .summary-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+
+  .summary-box p {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.7;
+  }
+
+  .transcript-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+
+  .transcript-box pre {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    white-space: pre-wrap;
+    line-height: 1.7;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 20px 0;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="badge">AI Powered · Field Sales Intelligence</div>
+    <h1>Meeting <span>Intelligence</span><br>System</h1>
+    <p class="subtitle">// Analyze sales meetings → instant AI decisions</p>
+  </header>
+
+  <div class="server-config">
+    <span id="status-dot"></span>
+    <label>API Server:</label>
+    <input type="text" id="serverUrl" value="http://localhost:8000" placeholder="http://your-server:8000" />
+    <button class="btn" style="width:auto;margin:0;padding:8px 16px;font-size:12px" onclick="checkHealth()">Check</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('voice')">🎙️ Voice Upload</button>
+    <button class="tab-btn" onclick="switchTab('text')">📝 Text Input</button>
+  </div>
+
+  <div id="tab-voice" class="tab-panel active">
+    <div class="card">
+      <div class="card-title">Upload Meeting Audio</div>
+      <div class="upload-zone" id="dropZone">
+        <input type="file" id="audioFile" accept=".wav,.mp3,.m4a,.ogg,.flac,.webm" onchange="onFileSelected(this)">
+        <span class="upload-icon">🎵</span>
+        <p>Drag & drop audio file or click to browse</p>
+        <p style="font-size:12px">Supports WAV, MP3, M4A, OGG, FLAC, WEBM</p>
+        <div class="file-name" id="fileName">No file selected</div>
+      </div>
+      <button class="btn" id="voiceBtn" onclick="analyzeVoice()" disabled>
+        <div class="spinner"></div>
+        <span class="btn-text">Analyze Meeting Audio</span>
+      </button>
+      <div class="error-banner" id="voiceError"></div>
+    </div>
+  </div>
+
+  <div id="tab-text" class="tab-panel">
+    <div class="card">
+      <div class="card-title">Enter Meeting Summary</div>
+      <textarea id="meetingText" placeholder="e.g. Doctor was interested but felt the price was high. He requested a 10% discount and asked for 50 sample units. Follow-up meeting scheduled after 5 days..."></textarea>
+      <button class="btn" id="textBtn" onclick="analyzeText()">
+        <div class="spinner"></div>
+        <span class="btn-text">Analyze Meeting Text</span>
+      </button>
+      <div class="error-banner" id="textError"></div>
+    </div>
+  </div>
+
+  <div id="results">
+    <hr class="divider">
+
+    <div class="results-header">
+      <div class="results-title">AI Analysis Report</div>
+      <div class="risk-badge" id="riskBadge"></div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Closure Probability</div>
+        <div class="metric-value accent" id="probValue">—</div>
+        <div class="prob-bar"><div class="prob-fill" id="probBar"></div></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Predicted Outcome</div>
+        <div class="metric-value" id="outcomeValue">—</div>
+      </div>
+    </div>
+
+    <div class="strategy-box">
+      <div class="strategy-label">Recommended Strategy</div>
+      <div class="strategy-text" id="strategyValue">—</div>
+    </div>
+
+    <div class="summary-box">
+      <div class="section-label">Decision Summary</div>
+      <p id="summaryValue">—</p>
+    </div>
+
+    <div id="transcriptSection" style="display:none">
+      <div class="transcript-box">
+        <div class="section-label">Transcript</div>
+        <pre id="transcriptValue"></pre>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  function getServerUrl() {
+    const url = document.getElementById('serverUrl').value.trim();
+    return url.replace(/\/$/, ''); // remove trailing slash
+  }
+
+  async function checkHealth() {
+    const dot = document.getElementById('status-dot');
+    dot.className = '';
+    try {
+      const res = await fetch(`${getServerUrl()}/health`, { signal: AbortSignal.timeout(5000) });
+      if (res.ok) {
+        dot.className = 'online';
+      } else {
+        dot.className = 'offline';
+      }
+    } catch {
+      dot.className = 'offline';
+    }
+  }
+
+  window.addEventListener('load', checkHealth);
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+      b.classList.toggle('active', (i === 0 && tab === 'voice') || (i === 1 && tab === 'text'));
+    });
+    document.getElementById('tab-voice').classList.toggle('active', tab === 'voice');
+    document.getElementById('tab-text').classList.toggle('active', tab === 'text');
+    document.getElementById('results').classList.remove('visible');
+  }
+
+  function onFileSelected(input) {
+    const file = input.files[0];
+    const btn = document.getElementById('voiceBtn');
+    const nameEl = document.getElementById('fileName');
+    if (file) {
+      nameEl.textContent = `✓ ${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
+      btn.disabled = false;
+    } else {
+      nameEl.textContent = 'No file selected';
+      btn.disabled = true;
+    }
+  }
+
+  const dropZone = document.getElementById('dropZone');
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const input = document.getElementById('audioFile');
+    input.files = e.dataTransfer.files;
+    onFileSelected(input);
+  });
+
+  function setLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    btn.disabled = loading;
+    btn.classList.toggle('loading', loading);
+  }
+
+  function showError(elId, msg) {
+    const el = document.getElementById(elId);
+    el.textContent = '⚠ ' + msg;
+    el.classList.add('visible');
+  }
+
+  function clearError(elId) {
+    const el = document.getElementById(elId);
+    el.textContent = '';
+    el.classList.remove('visible');
+  }
+
+  function renderResults(data) {
+    const prob = data.closure_probability ?? 0;
+    const outcome = data.predicted_closure === 1 ? 'Deal Likely ✓' : 'Deal Unlikely ✗';
+    const risk = data.risk_level || 'Low';
+
+    document.getElementById('probValue').textContent = (prob * 100).toFixed(0) + '%';
+    document.getElementById('probBar').style.width = (prob * 100) + '%';
+    document.getElementById('outcomeValue').textContent = outcome;
+    document.getElementById('strategyValue').textContent = data.recommended_strategy || '—';
+    document.getElementById('summaryValue').textContent = data.decision_summary || '—';
+
+    const riskBadge = document.getElementById('riskBadge');
+    riskBadge.textContent = risk + ' Risk';
+    riskBadge.className = `risk-badge risk-${risk}`;
+
+    const transcriptSection = document.getElementById('transcriptSection');
+    if (data.transcript) {
+      document.getElementById('transcriptValue').textContent = data.transcript;
+      transcriptSection.style.display = 'block';
+    } else {
+      transcriptSection.style.display = 'none';
+    }
+
+    document.getElementById('results').classList.add('visible');
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  async function analyzeVoice() {
+    const fileInput = document.getElementById('audioFile');
+    const file = fileInput.files[0];
+    clearError('voiceError');
+
+    if (!file) { showError('voiceError', 'Please select an audio file first.'); return; }
+
+    setLoading('voiceBtn', true);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch(`${getServerUrl()}/analyze-voice`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showError('voiceError', data.detail || `Server error (${res.status})`);
+        return;
+      }
+
+      renderResults(data);
+
+    } catch (err) {
+      console.error(err);
+      showError('voiceError', `Could not reach server at ${getServerUrl()}. Make sure the backend is running.`);
+    } finally {
+      setLoading('voiceBtn', false);
+    }
+  }
+  
+  async function analyzeText() {
+    const text = document.getElementById('meetingText').value.trim();
+    clearError('textError');
+
+    if (!text) { showError('textError', 'Please enter meeting summary text first.'); return; }
+    if (text.length < 20) { showError('textError', 'Please enter a more detailed meeting summary (at least 20 characters).'); return; }
+
+    setLoading('textBtn', true);
+
+    try {
+      const res = await fetch(`${getServerUrl()}/analyze-meeting`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showError('textError', data.detail || `Server error (${res.status})`);
+        return;
+      }
+
+      renderResults(data);
+
+    } catch (err) {
+      console.error(err);
+      showError('textError', `Could not reach server at ${getServerUrl()}. Make sure the backend is running.`);
+    } finally {
+      setLoading('textBtn', false);
+    }
+  }
+</script>
+</body>
+</html>
